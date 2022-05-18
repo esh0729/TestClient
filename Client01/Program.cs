@@ -96,7 +96,7 @@ namespace Client01
 
         private static bool LoadSystemInfo()
         {
-            string sUrl = "http://192.168.0.44:5000/Command.ashx?cmd=systemInfo";
+            string sUrl = "http://127.0.0.1:5030/auth/systemInfo";
             string sResponseText = string.Empty;
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(sUrl);
@@ -137,7 +137,7 @@ namespace Client01
                 }
 
                 JsonData jsonResponse = JsonMapper.ToObject(sResponse);
-                Console.WriteLine("SystemInfo = " + jsonResponse);
+                Console.WriteLine("SystemInfo = " + jsonResponse.ToJson());
             }
 
             return true;
@@ -151,7 +151,7 @@ namespace Client01
         {
             string sMetaData = "";
 
-            string sUrl = "http://192.168.0.44:5000/Command.ashx?cmd=metadata";
+            string sUrl = "http://127.0.0.1:5030/auth/metadata";
             string sResponseText = string.Empty;
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(sUrl);
@@ -184,18 +184,9 @@ namespace Client01
                     return false;
                 }
 
-                string sResponse = "";
-                if (!JsonUtil.GetParameter(jsonData, "response", out sResponse))
+                if (!JsonUtil.GetParameter(jsonData, "response", out sMetaData))
                 {
                     Console.WriteLine("Parsing Error.(response)");
-                    return false;
-                }
-
-                JsonData jsonResponse = JsonMapper.ToObject(sResponse);
-
-                if (!JsonUtil.GetParameter(jsonResponse, "metaData", out sMetaData))
-                {
-                    Console.WriteLine("Parsing Error.(metaData)");
                     return false;
                 }
             }
@@ -269,13 +260,20 @@ namespace Client01
             sAccessToken = "";
             Guid id = Guid.NewGuid();
 
-            string sUrl = "http://192.168.0.44:5000/Command.ashx?cmd=login&id=" + id;
+            string sUrl = "http://127.0.0.1:5030/auth/login";
+            string sBody = "{ \"id\" : " + "\"" + id + "\" }";
             string sResponseText = string.Empty;
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(sUrl);
-            request.Method = "GET";
+            request.Method = "POST";
+            request.ContentType = "application/json";
 
-            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+			byte[] bytes = Encoding.UTF8.GetBytes(sBody);
+			Stream writer = request.GetRequestStream();
+			writer.Write(bytes, 0, bytes.Length);
+			writer.Close();
+
+			using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
             {
                 Stream stream = response.GetResponseStream();
                 StreamReader reader = new StreamReader(stream);
@@ -302,11 +300,18 @@ namespace Client01
                     return false;
                 }
 
-                if (!JsonUtil.GetParameter(jsonData, "response", out sAccessToken))
+                string sToken = "";
+                if (!JsonUtil.GetParameter(jsonData, "response", out sToken))
                 {
                     Console.WriteLine("Parsing Error.(response)");
                     return false;
                 }
+
+                JsonData jsonToken = new JsonData();
+                jsonToken.SetJsonType(JsonType.Object);
+                jsonToken["accessToken"] = sToken;
+
+                sAccessToken = jsonToken.ToJson();
             }
 
             return true;

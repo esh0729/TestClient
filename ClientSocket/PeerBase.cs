@@ -30,7 +30,7 @@ namespace ClientSocket
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Member functions
 
-		public void Start(string sAddress, int nPort, int nConnectionTimeoutInterval = 30000)
+		public void Start(string sAddress, int nPort, int nConnectionTimeoutInterval = 0)
 		{
 			m_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse(sAddress), nPort);
@@ -49,7 +49,7 @@ namespace ClientSocket
 			// Timeout 시간 갱신
 			//
 
-			SendPing();
+			//SendPing();
 			
 			//
 			// Reiceve
@@ -98,35 +98,27 @@ namespace ClientSocket
 				// 4바이트 Packet의 총 바이트
 				//
 
-				byte[] buffer = new byte[sizeof(int)];
-				if (m_socket.Receive(buffer, buffer.Length, SocketFlags.None) > 0)
+				byte[] buffer = new byte[ushort.MaxValue];
+				int nLength = m_socket.Receive(buffer, buffer.Length, SocketFlags.None);
+				if (nLength > 0)
 				{
-					int nBufferLength = BitConverter.ToInt32(buffer, 0);
-
-					//
-					// 방금 받은 바이트수 만큼만 읽기 처리
-					//
-
-					buffer = new byte[nBufferLength];
-
-					m_socket.Receive(buffer, 0, buffer.Length, SocketFlags.None);
-
 					//
 					// 역직렬화
 					//
 
-					FullPacket fullPacket = FullPacket.ToFullPacket(buffer);
+					Data data = new Data();
+					Data.ToData(buffer, nLength, ref data);
 
-					switch (fullPacket.type)
+					switch (data.type)
 					{
 						// Timeout 갱신 처리
 						case PacketType.PingCheck: OnReceivePingCheck(); break;
 
 						// 서버 이벤트 처리
-						case PacketType.EventData: OnEventData(EventData.ToEventData(fullPacket.packet)); break;
+						case PacketType.EventData: OnEventData(EventData.ToEventData(data.packet)); break;
 
 						// 커맨드 응답 처리
-						case PacketType.OperationResponse: OnOperationResponse(OperationResponse.ToOperationResponse(fullPacket.packet)); break;
+						case PacketType.OperationResponse: OnOperationResponse(OperationResponse.ToOperationResponse(data.packet)); break;
 
 						default:
 							throw new Exception("Not Valied PacketType");
@@ -175,15 +167,11 @@ namespace ClientSocket
 				{
 					m_lastSendPingCheckTime = now;
 
-					List<byte> fullBuffer = new List<byte>();
+					Data data = new Data();
+					data.Set(PacketType.PingCheck, new byte[] { });
+					byte[] buffer = Data.ToBytes(data);
 
-					FullPacket fullPacket = new FullPacket(PacketType.PingCheck, new byte[] { });
-					byte[] buffer = FullPacket.ToBytes(fullPacket);
-
-					fullBuffer.AddRange(BitConverter.GetBytes(buffer.Length));
-					fullBuffer.AddRange(buffer);
-
-					m_socket.Send(fullBuffer.ToArray());
+					m_socket.Send(buffer);
 				}
 			}
 			catch (Exception ex)
@@ -217,8 +205,6 @@ namespace ClientSocket
 
 					if (m_operationRequests.Count != 0)
 					{
-						List<byte> fullBuffer = new List<byte>();
-
 						while (m_operationRequests.Count > 0)
 						{
 							OperationRequest operationRequest = m_operationRequests.Peek();
@@ -227,19 +213,18 @@ namespace ClientSocket
 							// Request 데이터 직렬화
 							//
 
-							byte[] buffer = FullPacket.ToBytes(new FullPacket(PacketType.OperationRequest, OperationRequest.ToBytes(operationRequest)));
-
-							//
-							// Packet의 바이트수 + Packet 서버에 전달
-							//
-
-							fullBuffer.AddRange(BitConverter.GetBytes(buffer.Length));
-							fullBuffer.AddRange(buffer);
+							Data data = new Data();
+							data.Set(PacketType.OperationRequest, OperationRequest.ToBytes(operationRequest));
+							byte[] buffer = Data.ToBytes(data);
 
 							m_operationRequests.Dequeue();
-						}
 
-						m_socket.Send(fullBuffer.ToArray());
+							//
+							// 서버에 전송
+							//
+
+							m_socket.Send(buffer);
+						}						
 					}
 				}
 			}

@@ -41,8 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Crc16.cs" />
     <Compile Include="EventData.cs" />
-    <Compile Include="FullPacket.cs" />
+    <Compile Include="Data.cs" />
     <Compile Include="OperationRequest.cs" />
     <Compile Include="OperationResponse.cs" />
     <Compile Include="PacketType.cs" />
