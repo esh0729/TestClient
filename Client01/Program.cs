@@ -48,15 +48,21 @@ namespace Client01
             // 시스템정보
             //
 
-            if (!LoadSystemInfo())
-                return;
+            //if (!LoadSystemInfo())
+            //{
+            //    Console.WriteLine("LoadSystemInfo() Failed");
+            //    return;
+            //}
 
             //
             // 메타데이터
             //
 
-            if (!LoadMetaData())
-                return;
+            //if (!LoadMetaData())
+            //{
+            //    Console.WriteLine("LoadMetaData() Failed");
+            //    return;
+            //}
 
             //
             // 로그인(인증서버)
@@ -137,7 +143,7 @@ namespace Client01
                 }
 
                 JsonData jsonResponse = JsonMapper.ToObject(sResponse);
-                Console.WriteLine("SystemInfo = " + jsonResponse.ToJson());
+                //Console.WriteLine("SystemInfo = " + jsonResponse.ToJson());
             }
 
             return true;
@@ -191,7 +197,7 @@ namespace Client01
                 }
             }
 
-            Console.WriteLine(sMetaData);
+            //Console.WriteLine(sMetaData);
             WriteMetaData(sMetaData);
 
             return true;

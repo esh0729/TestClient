@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 namespace ClientSocket
 {
@@ -49,7 +50,7 @@ namespace ClientSocket
 			// Timeout 시간 갱신
 			//
 
-			//SendPing();
+			SendPing();
 			
 			//
 			// Reiceve
@@ -99,15 +100,19 @@ namespace ClientSocket
 				//
 
 				byte[] buffer = new byte[ushort.MaxValue];
-				int nLength = m_socket.Receive(buffer, buffer.Length, SocketFlags.None);
+				int nLength = m_socket.Receive(buffer, 4, SocketFlags.None);
 				if (nLength > 0)
 				{
+					int nPacketLength = BitConverter.ToInt32(buffer, 0);
+
+					int test = m_socket.Receive(buffer, 4, nPacketLength - nLength, SocketFlags.None);
+
 					//
 					// 역직렬화
 					//
 
 					Data data = new Data();
-					Data.ToData(buffer, nLength, ref data);
+					Data.ToData(buffer, nPacketLength, ref data);
 
 					switch (data.type)
 					{

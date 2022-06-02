@@ -64,6 +64,7 @@ namespace Client01
 
 		private void OnLobbyInfoCommand(Handler handler)
 		{
+			
 			LobbyInfoResponseBody resBody = (LobbyInfoResponseBody)handler.ResponseBody;
 			PDLobbyHero[] heroes = resBody.heroes;
 
@@ -125,6 +126,7 @@ namespace Client01
 		private Guid placeInstanceId;
 		public void SendHeroInitEnter()
 		{
+			Console.WriteLine("SendHeroInitEnter");
 			CommandHandler<HeroInitEnterCommandBody, HeroInitEnterResponseBody> handler = new CommandHandler<HeroInitEnterCommandBody, HeroInitEnterResponseBody>(CommandName.HeroInitEnter, null);
 			handler.FinishHandler = OnHeroInitEnter;
 

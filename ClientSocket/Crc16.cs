@@ -11,13 +11,16 @@ namespace ClientSocket
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Member functions
 
-		public static ushort Calc(byte[] packet)
+		// StartIndex ~ EndIndex - 1 까지 체크
+		public static ushort Calc(byte[] packet, int nStartIndex, int nEndIndex)
 		{
 			ushort usCRC = 0xFFFF;
 			ushort usTemp = 0;
 
-			foreach (byte bPacket in packet)
+			for (int i = nStartIndex; i < nEndIndex; i++)
 			{
+				byte bPacket = packet[i];
+
 				// 하위 4비트에 대한 체크섬 계산
 				usTemp = s_Crc16Table[usCRC & 0x000F];
 				usCRC = (ushort)((usCRC >> 4) & 0x0FFF);
